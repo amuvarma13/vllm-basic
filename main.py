@@ -1,5 +1,5 @@
 import torch
-from vllm import LLMEngine, EngineArgs, SamplingParams
+from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
 
 # Set up model parameters
@@ -7,8 +7,7 @@ model_name = "canopylabs/orpheus-tts-0.1-finetune-prod"
 dtype = torch.bfloat16
 
 # Create engine and tokenizer
-engine_args = EngineArgs(model=model_name, dtype=dtype)
-engine = LLMEngine.from_engine_args(engine_args)
+engine = LLM.from_engine_args(model=model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 # Example prompt and optional voice
