@@ -7,7 +7,7 @@ model_name = "canopylabs/orpheus-tts-0.1-finetune-prod"
 dtype = torch.bfloat16
 
 # Create engine and tokenizer
-engine = LLM.from_engine_args(model=model_name)
+engine = LLM(model=model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 # Example prompt and optional voice
