@@ -1,32 +1,50 @@
-from vllm import LLM, SamplingParams
-from transformers import AutoTokenizer
 import torch
+from vllm import LLMEngine, EngineArgs, SamplingParams
+from transformers import AutoTokenizer
 
-# Initialize the vLLM model
-def load_model(model_name: str):
-    return LLM(model=model_name)
+# Set up model parameters
+model_name = "canopylabs/orpheus-tts-0.1-finetune-prod"
+dtype = torch.bfloat16
 
-# Load model and tokenizer
-model_name = "facebook/opt-125m"  # Replace with your model
-llm = load_model(model_name)
+# Create engine and tokenizer
+engine_args = EngineArgs(model=model_name, dtype=dtype)
+engine = LLMEngine.from_engine_args(engine_args)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-def run_vllm_inference(prompt: str, max_tokens: int = 100):
-    # Tokenize input text
-    input_ids = tokenizer(prompt, return_tensors="pt").input_ids
-    
-    # Define sampling parameters
-    sampling_params = SamplingParams(max_tokens=max_tokens)
-    
-    # Run inference
-    outputs = llm.generate(prompt_token_ids = input_ids, sampling_params=sampling_params)
-    
-    # Extract generated token IDs
-    generated_token_ids = [output.outputs[0].token_ids for output in outputs]
-    
-    return generated_token_ids
+# Example prompt and optional voice
+prompt = "Hello world"
+voice = "zoe"  # Set to None or empty string if you don't want to use a voice
 
-# Run inference
-prompt = "Once upon a time"
-outputs = run_vllm_inference(prompt)
-print(outputs)
+# Build the prompt string, adding voice tokens if provided
+if voice:
+    # Add voice prefix
+    adapted_prompt = f"{voice}: {prompt}"
+    prompt_tokens = tokenizer(adapted_prompt, return_tensors="pt")
+else:
+    # Just encode the raw prompt
+    prompt_tokens = tokenizer(prompt, return_tensors="pt")
+
+# Start/end tokens for Orpheus TTS
+start_token = torch.tensor([[128259]], dtype=torch.int64)
+end_tokens = torch.tensor([[128009, 128260, 128261, 128257]], dtype=torch.int64)
+all_input_ids = torch.cat([start_token, prompt_tokens.input_ids, end_tokens], dim=1)
+
+# Convert the entire sequence of IDs to a decoded string
+final_prompt = tokenizer.decode(all_input_ids[0])
+
+# Sampling parameters
+params = SamplingParams(
+    temperature=0.6,
+    top_p=0.8,
+    max_tokens=1200,
+    stop_token_ids=[49158],
+    repetition_penalty=1.3
+)
+
+# Generate tokens
+outputs = engine.generate([final_prompt], [params])
+
+# Extract the token IDs from the model output
+token_ids = [tok.token_id for tok in outputs[0].outputs[0].tokens]
+
+print("Generated token IDs:", token_ids)
