@@ -19,7 +19,7 @@ def run_vllm_inference(prompt: str, max_tokens: int = 100):
     sampling_params = SamplingParams(max_tokens=max_tokens)
     
     # Run inference
-    outputs = llm.generate(input_ids, sampling_params)
+    outputs = llm.generate(prompt_token_ids = input_ids, sampling_params=sampling_params)
     
     # Extract generated token IDs
     generated_token_ids = [output.outputs[0].token_ids for output in outputs]
