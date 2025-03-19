@@ -119,7 +119,7 @@ def text_to_speech(prompt, voice=None):
     audio_samples = parse_tokens_to_audio(generated_ids, snac_model)
     return audio_samples
 
-if __name__ == "__main__":
+
     # Example usage
-    audio_output = text_to_speech("Hello world", voice="zoe")
-    print("Decoded audio (tensors):", audio_output)
+audio_output = text_to_speech("Hello world", voice="zoe")
+print("Decoded audio (tensors):", audio_output)
